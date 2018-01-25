@@ -11,6 +11,7 @@ import tensorflow as tf
 from tensorflow.examples.tutorials.mnist import input_data
 from sklearn.utils import shuffle
 from tensorflow.contrib.layers import flatten
+import matplotlib.pyplot as plt
 
 import random
 import cv2
@@ -40,7 +41,9 @@ print("Updated Image Shape: {}".format(X_train[0].shape))
 
 # Show one image randomly.
 index = random.randint(0, len(X_train))
-image = X_train[index].squeeze()
+image = cv2.imread('test_images/3.jpg')
+image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+images = [image, image]
 # cv2.imshow('image', image)
 # cv2.waitKey(0)
 
@@ -129,6 +132,7 @@ training_operation = optimizer.minimize(loss_operation)
 
 # Model evaluation
 correct_prediction = tf.equal(tf.argmax(logits, 1), tf.argmax(one_hot_y, 1))
+predict = tf.argmax(logits, 1)
 accuracy_operation = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 saver = tf.train.Saver()
 
@@ -143,27 +147,35 @@ def evaluate(X_data, y_data):
         total_accuracy += (accuracy * len(batch_x))
     return total_accuracy / num_examples
 
+
+def predict_images(images):
+    image = np.array(images).reshape((len(images), 32, 32, 1))
+    sess = tf.get_default_session()
+    prediction = sess.run(predict, feed_dict={x: image})
+    return prediction
+
+
 # Train the model
-with tf.Session() as sess:
-    sess.run(tf.global_variables_initializer())
-    num_examples = len(X_train)
-
-    print("Training...")
-    print()
-    for i in range(EPOCHS):
-        X_train, y_train = shuffle(X_train, y_train)
-        for offset in range(0, num_examples, BATCH_SIZE):
-            end = offset + BATCH_SIZE
-            batch_x, batch_y = X_train[offset:end], y_train[offset:end]
-            sess.run(training_operation, feed_dict={x: batch_x, y: batch_y})
-
-        validation_accuracy = evaluate(X_validation, y_validation)
-        print("EPOCH {} ...".format(i + 1))
-        print("Validation Accuracy = {:.3f}".format(validation_accuracy))
-        print()
-
-    saver.save(sess, '../LeNet/lenet.ckpt')
-    print("Model saved")
+# with tf.Session() as sess:
+#     sess.run(tf.global_variables_initializer())
+#     num_examples = len(X_train)
+#
+#     print("Training...")
+#     print()
+#     for i in range(EPOCHS):
+#         X_train, y_train = shuffle(X_train, y_train)
+#         for offset in range(0, num_examples, BATCH_SIZE):
+#             end = offset + BATCH_SIZE
+#             batch_x, batch_y = X_train[offset:end], y_train[offset:end]
+#             sess.run(training_operation, feed_dict={x: batch_x, y: batch_y})
+#
+#         validation_accuracy = evaluate(X_validation, y_validation)
+#         print("EPOCH {} ...".format(i + 1))
+#         print("Validation Accuracy = {:.3f}".format(validation_accuracy))
+#         print()
+#
+#     saver.save(sess, '../LeNet/lenet.ckpt')
+#     print("Model saved")
 
 
 with tf.Session() as sess:
@@ -171,3 +183,8 @@ with tf.Session() as sess:
 
     test_accuracy = evaluate(X_test, y_test)
     print("Test Accuracy = {:.3f}".format(test_accuracy))
+
+    output = predict_images(images)
+    print('The handwrite is', output)
+    plt.imshow(image, cmap='gray')
+    plt.show()
